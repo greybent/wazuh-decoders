@@ -1,0 +1,35 @@
+name: decoder/ad-logon-success/0
+enabled: true
+id: 2b6d8a4f-9c3e-4f7a-8d1b-5e9c7a3f6b2d
+metadata:
+  title: Successful Logon (Event 4624)
+  description: "Extracts target user, source IP, logon type, auth package, and elevated-token status from successful logon event 4624"
+  author: User
+  references: []
+  documentation: ''
+  supports: []
+parents:
+  - decoder/ad-domain-controller-root/0
+check:
+  - event.original: contains("Microsoft-Windows-Security-Auditing")
+  - event.original: contains("<EventID>4624</EventID>")
+normalize:
+  - map:
+      - user.target.name: regex_extract($event.original, "<Data Name='TargetUserName'>([^<]+)</Data>")
+      - user.domain: regex_extract($event.original, "<Data Name='TargetDomainName'>([^<]+)</Data>")
+      - network.protocol: regex_extract($event.original, "<Data Name='AuthenticationPackageName'>([^<]+)</Data>")
+      - source.address: regex_extract($event.original, "<Data Name='IpAddress'>([^<]+)</Data>")
+      - _port_raw: regex_extract($event.original, "<Data Name='IpPort'>([^<]+)</Data>")
+      - source.port: parse_long($_port_raw)
+      - _logon_type: regex_extract($event.original, "<Data Name='LogonType'>([^<]+)</Data>")
+      - _elevated: regex_extract($event.original, "<Data Name='ElevatedToken'>([^<]+)</Data>")
+      - host.name: regex_extract($event.original, "<Computer>([^<]+)</Computer>")
+      - event.code: concat("4624", "")
+      - event.action: concat("logon_success", "")
+      - event.reason: concat("logon_type_", $_logon_type)
+      - event.severity: 10
+  - check:
+      - _elevated: string_equal("%%1841")
+    map:
+      - event.action: concat("logon_success_elevated", "")
+      - event.severity: 50

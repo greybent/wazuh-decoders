@@ -1,0 +1,31 @@
+name: decoder/ad-ldap-unsigned-bind/0
+enabled: true
+id: 3d8e6b1a-9c47-4f2d-b5a0-6e7c9f4a2d1b
+metadata:
+  title: AD LDAP Unsigned/Plaintext Bind
+  description: "Extracts client IP, identity, and bind type from AD DS Event 2889 (unsigned/plaintext LDAP bind)"
+  author: User
+  references: []
+  documentation: ''
+  supports: []
+parents:
+  - decoder/ad-domain-controller-root/0
+check:
+  - event.original: contains("<Event xmlns=")
+  - event.original: contains("<EventID Qualifiers='16384'>2889</EventID>")
+normalize:
+  - map:
+      - source.address: regex_extract($event.original, "<Data>([^<]+)</Data><Data>[^<]+</Data><Data>[^<]+</Data>")
+      - user.name: regex_extract($event.original, "<Data>[^<]+</Data><Data>([^<]+)</Data><Data>[^<]+</Data>")
+      - _bind_type: regex_extract($event.original, "<Data>[^<]+</Data><Data>[^<]+</Data><Data>([^<]+)</Data>")
+      - event.code: concat("2889", "")
+  - check:
+      - _bind_type: string_equal("1")
+    map:
+      - event.action: concat("ldap_plaintext_bind", "")
+      - event.severity: 80
+  - check:
+      - _bind_type: string_equal("0")
+    map:
+      - event.action: concat("ldap_unsigned_bind", "")
+      - event.severity: 50

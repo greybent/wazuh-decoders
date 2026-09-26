@@ -1,0 +1,34 @@
+name: decoder/ad-kerberos-service-ticket/0
+enabled: true
+id: 7d3f9a2c-5e8b-4c1a-9f6d-3a8e5c7b2d4f
+metadata:
+  title: Kerberos Service Ticket Request (Event 4769)
+  description: "Extracts account, target service, source IP, and result from Kerberos TGS request audit event 4769"
+  author: User
+  references: []
+  documentation: ''
+  supports: []
+parents:
+  - decoder/ad-domain-controller-root/0
+check:
+  - event.original: contains("Microsoft-Windows-Security-Auditing")
+  - event.original: contains("<EventID>4769</EventID>")
+normalize:
+  - map:
+      - user.name: regex_extract($event.original, "<Data Name='TargetUserName'>([^<]+)</Data>")
+      - user.domain: regex_extract($event.original, "<Data Name='TargetDomainName'>([^<]+)</Data>")
+      - destination.domain: regex_extract($event.original, "<Data Name='ServiceName'>([^<]+)</Data>")
+      - source.address: regex_extract($event.original, "<Data Name='IpAddress'>([^<]+)</Data>")
+      - _port_raw: regex_extract($event.original, "<Data Name='IpPort'>([^<]+)</Data>")
+      - source.port: parse_long($_port_raw)
+      - _status: regex_extract($event.original, "<Data Name='Status'>([^<]+)</Data>")
+      - host.name: regex_extract($event.original, "<Computer>([^<]+)</Computer>")
+      - event.code: concat("4769", "")
+      - event.action: concat("kerberos_service_ticket_request", "")
+      - event.outcome: concat("failure", "")
+      - event.severity: 40
+  - check:
+      - _status: string_equal("0x0")
+    map:
+      - event.outcome: concat("success", "")
+      - event.severity: 10

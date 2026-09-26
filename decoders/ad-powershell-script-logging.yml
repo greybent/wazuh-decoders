@@ -1,0 +1,31 @@
+name: decoder/ad-powershell-script-logging/0
+enabled: true
+id: 5c9e3a7d-2f6b-4d8e-a1c3-9b7e4d6f8a2c
+metadata:
+  title: PowerShell Script Block Logging (Events 4103/4104)
+  description: "Extracts user, command, and script block text from PowerShell operational log events 4103 and 4104"
+  author: User
+  references: []
+  documentation: ''
+  supports: []
+parents:
+  - decoder/ad-domain-controller-root/0
+check:
+  - event.original: contains("Microsoft-Windows-PowerShell")
+normalize:
+  - check:
+      - event.original: contains("<EventID>4103</EventID>")
+    map:
+      - event.code: concat("4103", "")
+      - event.action: concat("powershell_command_invocation", "")
+      - user.name: "regex_extract($event.original, 'Benutzer: ([^ ]+)')"
+      - process.name: "regex_extract($event.original, 'Befehlsname: ([^ ]+)')"
+      - message: regex_extract($event.original, "<Data Name='Payload'>([^<]+)</Data>")
+      - event.severity: 20
+  - check:
+      - event.original: contains("<EventID>4104</EventID>")
+    map:
+      - event.code: concat("4104", "")
+      - event.action: concat("powershell_scriptblock_logged", "")
+      - process.command_line: regex_extract($event.original, "<Data Name='ScriptBlockText'>([^<]+)</Data>")
+      - event.severity: 20

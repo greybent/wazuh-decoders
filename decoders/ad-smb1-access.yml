@@ -1,0 +1,22 @@
+name: decoder/ad-smb1-access/0
+enabled: true
+id: 6a2f8d1c-4e9b-4a3f-8c6d-1e7b5a9f3d2c
+metadata:
+  title: SMB1 Access Attempt Detected
+  description: "Extracts client IP from SMBServer/Audit Event 3000, logged when a client accesses a server via legacy SMB1"
+  author: User
+  references: []
+  documentation: ''
+  supports: []
+parents:
+  - decoder/ad-domain-controller-root/0
+check:
+  - event.original: contains("Microsoft-Windows-SMBServer")
+  - event.original: contains("<EventID>3000</EventID>")
+normalize:
+  - map:
+      - source.address: regex_extract($event.original, "<Data Name='ClientName'>([^<]+)</Data>")
+      - host.name: regex_extract($event.original, "<Computer>([^<]+)</Computer>")
+      - event.code: concat("3000", "")
+      - event.action: concat("smb1_access", "")
+      - event.severity: 60

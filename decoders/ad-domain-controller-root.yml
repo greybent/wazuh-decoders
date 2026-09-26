@@ -1,0 +1,9 @@
+name: decoder/ad-domain-controller-root/0
+enabled: true
+metadata:
+  title: AD Domain Controller Detections Root
+  description: "Root placeholder decoder for the ad-domain-controller-detections integration."
+  author: User
+  references: []
+  documentation: ''
+  supports: []

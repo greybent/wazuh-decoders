@@ -1,0 +1,24 @@
+name: decoder/ad-ntlm-auth/0
+enabled: true
+id: 8f4c2e6a-1b9d-4a3e-9f5c-6d8a2e4b7c1f
+metadata:
+  title: NTLM Authentication Audit (Event 8004)
+  description: "Extracts user, domain, target server, and secure channel info from NTLM operational log Event 8004"
+  author: User
+  references: []
+  documentation: ''
+  supports: []
+parents:
+  - decoder/ad-domain-controller-root/0
+check:
+  - event.original: contains("Microsoft-Windows-Security-Netlogon")
+  - event.original: contains("<EventID>8004</EventID>")
+normalize:
+  - map:
+      - user.name: regex_extract($event.original, "<Data Name='UserName'>([^<]+)</Data>")
+      - user.domain: regex_extract($event.original, "<Data Name='DomainName'>([^<]+)</Data>")
+      - destination.domain: regex_extract($event.original, "<Data Name='SChannelName'>([^<]+)</Data>")
+      - host.name: regex_extract($event.original, "<Computer>([^<]+)</Computer>")
+      - event.code: concat("8004", "")
+      - event.action: concat("ntlm_authentication", "")
+      - event.severity: 30
